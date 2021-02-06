@@ -29,7 +29,7 @@ type IGoRoutine interface {
 	// Author : go_developer@163.com<张德满>
 	//
 	// Date : 2021/02/06 16:16:21
-	FailCallback()
+	FailCallback(err error)
 
 	// SuccessCallback 执行成功时的回调
 	//
@@ -43,7 +43,7 @@ type IGoRoutine interface {
 	// Author : go_developer@163.com<张德满>
 	//
 	// Date : 2021/02/06 16:17:45
-	PanicCallback()
+	PanicCallback(paniceTrace []byte)
 
 	// GetMaxExecuteTime 获取协程最大执行时间,单位: 秒,设置成0表示不限时间
 	//
