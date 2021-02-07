@@ -71,12 +71,14 @@ func (d *dispatch) Run(goroutine IGoRoutine) {
 //
 // Date : 2021/02/06 21:25:02
 func (d *dispatch) GetGoroutineCount() map[string]GoroutineInfo {
+	currentTime := time.Now().Format("2006-01-02 15:04:05")
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 
 	result := make(map[string]GoroutineInfo)
 	for name, lockChan := range d.goroutineLockTable {
 		result[name] = GoroutineInfo{
+			Time:            currentTime,
 			GoroutineName:   name,
 			MaxRunCount:     cap(lockChan),
 			RunCount:        len(lockChan),

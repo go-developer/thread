@@ -16,6 +16,7 @@ const (
 
 // GoroutineInfo 对外输出的协程信息
 type GoroutineInfo struct {
+	Time            string `json:"time"`              // 数据采集的时间
 	GoroutineName   string `json:"goroutine_name"`    // 协程名称
 	MaxRunCount     int    `json:"max_run_count"`     // 最大同时运行数量
 	WaitingCount    int    `json:"waiting_count"`     // 当前等待数量
