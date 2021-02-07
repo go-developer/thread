@@ -57,7 +57,7 @@ type IGoRoutine interface {
 	// Author : go_developer@163.com<张德满>
 	//
 	// Date : 2021/02/06 16:29:44
-	GetMaxGoRoutineCnt() int64
+	GetMaxGoRoutineCnt() int
 
 	// GetGoRoutineName 获取goroutine任务名,需要全局唯一,不要冲突
 	//

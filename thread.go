@@ -13,8 +13,10 @@ package thread
 
 import (
 	"bytes"
+	"context"
 	"runtime"
 	"sync"
+	"time"
 )
 
 // Dispatch 协程调度器实例
@@ -50,7 +52,7 @@ func (d *dispatch) Run(goroutine IGoRoutine) {
 	if _, exist := d.goroutineListTable[goroutine.GetGoRoutineName()]; !exist {
 		macGoroutineCnt := goroutine.GetMaxGoRoutineCnt()
 		if macGoroutineCnt <= 0 {
-			macGoroutineCnt = defaultMaxGoroutineCount
+			macGoroutineCnt = defaultGoroutineCount
 		}
 
 		d.goroutineListTable[goroutine.GetGoRoutineName()] = make(chan IGoRoutine, macGoroutineCnt)
@@ -68,18 +70,14 @@ func (d *dispatch) Run(goroutine IGoRoutine) {
 // Author : go_developer@163.com<张德满>
 //
 // Date : 2021/02/06 21:25:02
-func (d *dispatch) GetGoroutineCount() map[string]interface{} {
+func (d *dispatch) GetGoroutineCount() map[string]GoroutineInfo {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	type goroutineInfo struct {
-		MaxRunCount     int `json:"max_run_count"`     // 最大同时运行数量
-		WaitingCount    int `json:"waiting_count"`     // 当前等待数量
-		MaxWaitingCount int `json:"max_waiting_count"` // 最大等待任务数
-		RunCount        int `json:"run_count"`         // 当前运行数量
-	}
-	result := make(map[string]interface{})
+
+	result := make(map[string]GoroutineInfo)
 	for name, lockChan := range d.goroutineLockTable {
-		result[name] = goroutineInfo{
+		result[name] = GoroutineInfo{
+			GoroutineName:   name,
 			MaxRunCount:     cap(lockChan),
 			RunCount:        len(lockChan),
 			WaitingCount:    len(d.goroutineListTable[name]),
@@ -89,23 +87,23 @@ func (d *dispatch) GetGoroutineCount() map[string]interface{} {
 	return result
 }
 
-// getGoRuntineLock 获取协程锁
+// getGoroutineLock 获取协程锁
 //
 // Author : go_developer@163.com<张德满>
 //
 // Date : 2021/02/06 17:26:25
-func (d *dispatch) getGoRuntineLock(goroutine IGoRoutine) {
+func (d *dispatch) getGoroutineLock(goroutine IGoRoutine) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	d.goroutineLockTable[goroutine.GetGoRoutineName()] <- 1
 }
 
-// releaseGoRuntineLock 释放锁
+// releaseGoroutineLock 释放锁
 //
 // Author : go_developer@163.com<张德满>
 //
 // Date : 2021/02/06 18:15:39
-func (d *dispatch) releaseGoRuntineLock(goroutine IGoRoutine) {
+func (d *dispatch) releaseGoroutineLock(goroutine IGoRoutine) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	<-d.goroutineLockTable[goroutine.GetGoRoutineName()]
@@ -119,11 +117,17 @@ func (d *dispatch) releaseGoRuntineLock(goroutine IGoRoutine) {
 func (d *dispatch) consumer(taskChannel chan IGoRoutine) {
 	for goroutine := range taskChannel {
 		// 获取锁
-		d.getGoRuntineLock(goroutine)
+		d.getGoroutineLock(goroutine)
+
+		timeout := goroutine.GetMaxExecuteTime()
+		if timeout <= 0 {
+			timeout = defaultGoroutineRuntime
+		}
+		ctx, cancelFunc := context.WithTimeout(context.Background(), time.Duration(timeout))
 		// 执行逻辑
-		go func(goroutine IGoRoutine) {
+		go func(ctx context.Context, cancelFunc context.CancelFunc, goroutine IGoRoutine) {
 			// 释放锁
-			defer d.releaseGoRuntineLock(goroutine)
+			defer d.releaseGoroutineLock(goroutine)
 			// 捕获panic,防止因为协程异常导致进程挂掉
 			defer func() {
 				if r := recover(); nil != r {
@@ -139,7 +143,7 @@ func (d *dispatch) consumer(taskChannel chan IGoRoutine) {
 				// 触发成功回调
 				goroutine.SuccessCallback()
 			}
-		}(goroutine)
+		}(ctx, cancelFunc, goroutine)
 	}
 }
 

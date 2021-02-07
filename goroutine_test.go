@@ -20,6 +20,8 @@ func TestGORoutine(t *testing.T) {
 		fmt.Println("协程信息:", string(byteData))
 	}
 	for {
+		time.Sleep(time.Second * 10)
+		break
 	}
 }
 
@@ -64,7 +66,7 @@ func (tg *testGoroutine) GetMaxExecuteTime() int64 {
 	return 10
 }
 
-func (tg *testGoroutine) GetMaxGoRoutineCnt() int64 {
+func (tg *testGoroutine) GetMaxGoRoutineCnt() int {
 	return 10
 }
 
