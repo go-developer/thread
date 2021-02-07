@@ -14,13 +14,13 @@ import (
 //
 // Date : 2021/02/06 18:39:39
 func TestGORoutine(t *testing.T) {
-	for i := 0; i < 100; i++ {
-		Dispatch.Run(NewTestGoroutine(i))
-		byteData, _ := json.Marshal(Dispatch.GetGoroutineCount())
-		fmt.Println("协程信息:", string(byteData))
-	}
+	//for i := 0; i < 100; i++ {
+	Dispatch.Run(NewTestGoroutine(1))
+	byteData, _ := json.Marshal(Dispatch.GetGoroutineCount())
+	fmt.Println("协程信息:", string(byteData))
+	//}
 	for {
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 20)
 		break
 	}
 }
@@ -37,7 +37,9 @@ type testGoroutine struct {
 }
 
 func (tg *testGoroutine) Execute() error {
-	if (tg.num % 3) == 0 {
+	time.Sleep(time.Second * 5)
+	fmt.Printf("%s 超时已经摘掉当前协程 \n", time.Now().Format("2006-01-02 15:04:05"))
+	if tg.num%3 == 0 {
 		return nil
 	}
 	if tg.num%3 == 1 {
@@ -46,7 +48,6 @@ func (tg *testGoroutine) Execute() error {
 	if tg.num%3 == 2 {
 		panic("模拟程序panic")
 	}
-	time.Sleep(time.Duration(tg.num % 10))
 	return nil
 }
 
@@ -63,7 +64,7 @@ func (tg *testGoroutine) PanicCallback(data []byte) {
 }
 
 func (tg *testGoroutine) GetMaxExecuteTime() int64 {
-	return 10
+	return 2
 }
 
 func (tg *testGoroutine) GetMaxGoRoutineCnt() int {

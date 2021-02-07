@@ -14,6 +14,7 @@ package thread
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"runtime"
 	"sync"
 	"time"
@@ -125,25 +126,50 @@ func (d *dispatch) consumer(taskChannel chan IGoRoutine) {
 		if timeout <= 0 {
 			timeout = defaultGoroutineRuntime
 		}
-		ctx, cancelFunc := context.WithTimeout(context.Background(), time.Duration(timeout))
+		ctx, cancelFunc := context.WithDeadline(context.Background(), time.Unix(timeout+time.Now().Unix(), 0))
 		// 执行逻辑
 		go func(ctx context.Context, cancelFunc context.CancelFunc, goroutine IGoRoutine) {
-			// 释放锁
-			defer d.releaseGoroutineLock(goroutine)
-			// 捕获panic,防止因为协程异常导致进程挂掉
-			defer func() {
-				if r := recover(); nil != r {
-					panicTrace := d.panicTrace()
-					goroutine.PanicCallback(panicTrace)
+			startTime := time.Now().Unix()
+
+			finishChan := make(chan int, 1)
+			go func(ctx context.Context, finishChan chan int) {
+				fmt.Println("进入了真实任务逻辑")
+				// 释放锁
+				defer d.releaseGoroutineLock(goroutine)
+				// 捕获panic,防止因为协程异常导致进程挂掉
+				defer func() {
+					if r := recover(); nil != r {
+						panicTrace := d.panicTrace()
+						goroutine.PanicCallback(panicTrace)
+					}
+				}()
+				//执行协程
+				if err := goroutine.Execute(); nil != err {
+					// 触发失败回调`
+					goroutine.FailCallback(err)
+				} else {
+					// 触发成功回调
+					goroutine.SuccessCallback()
 				}
-			}()
-			//执行协程
-			if err := goroutine.Execute(); nil != err {
-				// 触发失败回调
-				goroutine.FailCallback(err)
-			} else {
-				// 触发成功回调
-				goroutine.SuccessCallback()
+				finishChan <- 1
+			}(ctx, finishChan)
+
+			for {
+				select {
+				case <-ctx.Done():
+					// 接收到信号
+					fmt.Printf("%s, 接收到完成信号 : %d \n", time.Now().Format("2006-01-02 15:04:05"), time.Now().Unix()-startTime)
+					cancelFunc()
+					return
+				case <-time.After(time.Second * time.Duration(timeout)):
+					// 超时
+					fmt.Printf("%s 超时自动结束 %d \n", time.Now().Format("2006-01-02 15:04:05"), time.Now().Unix()-startTime)
+					cancelFunc()
+					return
+				case <-finishChan:
+					// 任务预期时间内已经提前完成
+					return
+				}
 			}
 		}(ctx, cancelFunc, goroutine)
 	}
