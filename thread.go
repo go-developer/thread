@@ -48,7 +48,12 @@ func (d *dispatch) Run(goroutine IGoRoutine) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	if _, exist := d.goroutineListTable[goroutine.GetGoRoutineName()]; !exist {
-		d.goroutineListTable[goroutine.GetGoRoutineName()] = make(chan IGoRoutine, 2048)
+		macGoroutineCnt := goroutine.GetMaxGoRoutineCnt()
+		if macGoroutineCnt <= 0 {
+			macGoroutineCnt = defaultMaxGoroutineCount
+		}
+
+		d.goroutineListTable[goroutine.GetGoRoutineName()] = make(chan IGoRoutine, macGoroutineCnt)
 		// 启动消费者
 		go d.consumer(d.goroutineListTable[goroutine.GetGoRoutineName()])
 	}
