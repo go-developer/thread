@@ -43,7 +43,14 @@ type IGoRoutine interface {
 	// Author : go_developer@163.com<张德满>
 	//
 	// Date : 2021/02/06 16:17:45
-	PanicCallback(paniceTrace []byte)
+	PanicCallback(panicTrace []byte)
+
+	// Recycle 析构函数,协程执行完成用于释放资源
+	//
+	// Author : go_developer@163.com<张德满>
+	//
+	// Date : 2021/02/06 16:17:45
+	Recycle()
 
 	// GetMaxExecuteTime 获取协程最大执行时间,单位: 秒,设置成0表示不限时间
 	//

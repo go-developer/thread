@@ -74,3 +74,7 @@ func (tg *testGoroutine) GetMaxGoRoutineCnt() int {
 func (tg *testGoroutine) GetGoRoutineName() string {
 	return "test-task"
 }
+
+func (tg *testGoroutine) Recycle() {
+	fmt.Println("这是一个析构函数")
+}

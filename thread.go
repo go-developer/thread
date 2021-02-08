@@ -134,6 +134,8 @@ func (d *dispatch) consumer(taskChannel chan IGoRoutine) {
 			finishChan := make(chan int, 1)
 			go func(ctx context.Context, finishChan chan int) {
 				fmt.Println("进入了真实任务逻辑")
+				// 析构函数
+				defer goroutine.Recycle()
 				// 释放锁
 				defer d.releaseGoroutineLock(goroutine)
 				// 捕获panic,防止因为协程异常导致进程挂掉
