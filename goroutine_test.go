@@ -78,3 +78,7 @@ func (tg *testGoroutine) GetGoRoutineName() string {
 func (tg *testGoroutine) Recycle() {
 	fmt.Println("这是一个析构函数")
 }
+
+func (tg *testGoroutine) TimeoutCallback(startTime int64, endTime int64) {
+	fmt.Println("任务执行超时，收到回调")
+}

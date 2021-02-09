@@ -129,7 +129,7 @@ func (d *dispatch) consumer(taskChannel chan IGoRoutine) {
 		ctx, cancelFunc := context.WithDeadline(context.Background(), time.Unix(timeout+time.Now().Unix(), 0))
 		// 执行逻辑
 		go func(ctx context.Context, cancelFunc context.CancelFunc, goroutine IGoRoutine) {
-			startTime := time.Now().Unix()
+			startTime := time.Now().UnixNano()
 
 			finishChan := make(chan int, 1)
 			go func(ctx context.Context, finishChan chan int) {
@@ -162,11 +162,13 @@ func (d *dispatch) consumer(taskChannel chan IGoRoutine) {
 					// 接收到信号
 					fmt.Printf("%s, 接收到完成信号 : %d \n", time.Now().Format("2006-01-02 15:04:05"), time.Now().Unix()-startTime)
 					cancelFunc()
+					goroutine.TimeoutCallback(startTime, time.Now().UnixNano())
 					return
 				case <-time.After(time.Second * time.Duration(timeout)):
 					// 超时
 					fmt.Printf("%s 超时自动结束 %d \n", time.Now().Format("2006-01-02 15:04:05"), time.Now().Unix()-startTime)
 					cancelFunc()
+					goroutine.TimeoutCallback(startTime, time.Now().UnixNano())
 					return
 				case <-finishChan:
 					// 任务预期时间内已经提前完成

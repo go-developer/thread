@@ -38,6 +38,13 @@ type IGoRoutine interface {
 	// Date : 2021/02/06 16:17:11
 	SuccessCallback()
 
+	// TimeoutCallback 任务执行超时的回调, startTime && enTime 纳秒时间戳
+	//
+	// Author : go_developer@163.com<张德满>
+	//
+	// Date : 4:52 下午 2021/2/9
+	TimeoutCallback(startTime int64, endTime int64)
+
 	// PanicCallback 逻辑发生panic时的回调
 	//
 	// Author : go_developer@163.com<张德满>
